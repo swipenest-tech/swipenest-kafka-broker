@@ -1,0 +1,4 @@
+{
+  "_comment": "Kafka broker private IPs for VPC-internal connections (INTERNAL listener). Port is controlled by KAFKA_PORT in .env.local (default: 19092). Updated automatically by scripts/configure-cluster.sh after each deployment. Copy this file directly to swipenest-consumer/brokers.json to point the consumer at the new brokers.",
+  "brokers": []
+}
