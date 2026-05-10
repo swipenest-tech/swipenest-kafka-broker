@@ -269,7 +269,7 @@ async function printConsumerLag(admin) {
         groupOffsets = await admin.fetchOffsets({ groupId: KAFKA_GROUP_ID, topics: TOPICS });
     } catch (err) {
         console.warn(`[Lag] Could not fetch offsets for group '${KAFKA_GROUP_ID}': ${err.message}`);
-        console.warn('[Lag] Ensure the consumer group has consumed at least one message.');
+        console.warn('[Lag] Consumer group has no committed offsets on this cluster yet (group is new or never consumed here).');
         return;
     }
 

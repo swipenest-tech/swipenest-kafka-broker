@@ -4,11 +4,13 @@
   "description": "SwipeNest Kafka broker management — deploy, configure, load test data, and inspect brokers.",
   "private": true,
   "scripts": {
-    "deploy":     "bash scripts/deploy-instances.sh",
-    "configure":  "bash scripts/configure-cluster.sh",
-    "clear":      "bash scripts/clear-instances.sh",
-    "load-data":  "bash scripts/load-data.sh",
-    "check-data": "node scripts/check-data.js"
+    "deploy-brokers": "bash scripts/deploy-kafka-brokers.sh",
+    "deploy":         "bash scripts/deploy-instances.sh",
+    "configure":      "bash scripts/configure-cluster.sh",
+    "clear":          "bash scripts/clear-instances.sh",
+    "load-data":      "bash scripts/load-data.sh",
+    "check-data":     "bash scripts/check-data.sh",
+    "check-data:js":  "node scripts/check-data.js"
   },
   "dependencies": {
     "dotenv":  "^16.4.5",

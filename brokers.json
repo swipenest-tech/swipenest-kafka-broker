@@ -1,4 +1,13 @@
 {
-  "_comment": "Kafka broker private IPs for VPC-internal connections (INTERNAL listener). Port is controlled by KAFKA_PORT in .env.local (default: 19092). Updated automatically by scripts/configure-cluster.sh after each deployment. Copy this file directly to swipenest-consumer/brokers.json to point the consumer at the new brokers.",
-  "brokers": []
+  "_comment": "Kafka broker IPs for SwipeNest. Port is controlled by KAFKA_PORT in .env.local (default: 19092 — INTERNAL VPC listener). privateIp: used by in-VPC app servers (swipenest-core, swipenest-consumer). publicIp: used by external scripts (load-data.js, check-data.js). Written by deploy-kafka-brokers.sh on 2026-05-10T13:04:33Z.",
+  "brokers": [
+    {
+      "privateIp": "10.0.1.212",
+      "publicIp": "3.110.120.182"
+    },
+    {
+      "privateIp": "10.0.1.152",
+      "publicIp": "13.233.113.195"
+    }
+  ]
 }
