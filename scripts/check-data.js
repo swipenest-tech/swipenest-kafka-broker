@@ -36,7 +36,7 @@ const AWS_REGION      = process.env.AWS_REGION      || 'ap-south-1';
 const KAFKA_GROUP_ID  = process.env.KAFKA_GROUP_ID  || 'swipenest-consumer-group';
 const EC2_USER        = 'ubuntu';
 const PEM_KEY         = path.join(process.env.HOME, '.ssh/ec2-key-pair.pem');
-const TOPICS          = ['video_view', 'post_impression', 'video_watch_progress', 'post_likes'];
+const TOPICS          = ['video_view', 'post_impression', 'video_watch_progress', 'post_likes', 'post_comments'];
 
 // ─── SSH tunnel state ─────────────────────────────────────────────────────────
 const _sshProcs     = [];

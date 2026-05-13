@@ -65,11 +65,14 @@ The root-level `brokers.json` is the single source of truth for broker IPs. It's
 
 ### Kafka topics
 
-Four topics created during deployment:
+Five topics created during deployment:
 - `video_view`
 - `post_impression`
 - `post_likes`
 - `video_watch_progress`
+- `post_comments`
+
+**Partition key:** No explicit Kafka message key is set in `load-data.js` — messages are pushed as `{ value }` only, so Kafka distributes them **round-robin** across partitions. The number of partitions per topic is chosen interactively during `deploy-brokers` (default = broker count).
 
 ### check-data.sh — two-stage design
 

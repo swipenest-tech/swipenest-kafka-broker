@@ -71,6 +71,7 @@ TOPICS=(
     "post_impression"
     "post_likes"
     "video_watch_progress"
+    "post_comments"
 )
 declare -A TOPIC_PARTITIONS
 

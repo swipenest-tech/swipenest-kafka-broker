@@ -7,8 +7,8 @@
  * Called by load-data.sh which sets:
  *   TOTAL_RECORDS  — total number of events to push (default: 2000)
  *
- * Records are distributed evenly across 4 topics:
- *   video_view, post_impression, video_watch_progress, post_likes
+ * Records are distributed evenly across 5 topics:
+ *   video_view, post_impression, video_watch_progress, post_likes, post_comments
  *
  * Infrastructure:
  *   - Discovers live EC2 kafka-broker instances via AWS CLI (tag Role=kafka-broker)
@@ -39,7 +39,7 @@ const PEM_KEY       = path.join(process.env.HOME, '.ssh/ec2-key-pair.pem');
 const KAFKA_PORT    = 9092;   // CLIENT listener — public IP, external access
 const TOTAL_RECORDS = parseInt(process.env.TOTAL_RECORDS || '2000', 10);
 const BATCH_SIZE    = 100;
-const TOPICS        = ['video_view', 'post_impression', 'video_watch_progress', 'post_likes'];
+const TOPICS        = ['video_view', 'post_impression', 'video_watch_progress', 'post_likes', 'post_comments'];
 
 // HMAC-SHA256 fingerprint — same secret as crypto-mgt.js in swipenest-core
 const _USER_HASH_SECRET = 'swipenest-uid-hmac-k9x2';
@@ -87,6 +87,11 @@ function makeMessage(topic, idx, sessionCtx) {
     if (topic === 'post_likes') {
         base.content_type = rand(['video', 'image', 'reel']);
         base.action       = 'like';
+    }
+    if (topic === 'post_comments') {
+        base.content_type = rand(['video', 'image', 'reel']);
+        base.action       = 'comment';
+        base.comment_id   = `cmt_${randInt(1, 10000)}`;
     }
     return base;
 }
