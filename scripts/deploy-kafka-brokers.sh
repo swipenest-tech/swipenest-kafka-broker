@@ -684,7 +684,9 @@ if [[ ${#TOPICS_TO_CREATE[@]} -gt 0 ]]; then
                     "--create" "--if-not-exists" \
                     "--topic" "${topic}" \
                     "--partitions" "${TOPIC_PARTITIONS[$topic]}" \
-                    "--replication-factor" "${REPLICATION_FACTOR}" 2>/dev/null; then
+                    "--replication-factor" "${REPLICATION_FACTOR}" \
+                    "--config" "retention.ms=604800000" \
+                    "--config" "cleanup.policy=delete" 2>/dev/null; then
                     break
                 fi
                 [[ $attempt -lt 3 ]] && { warn "  Attempt ${attempt} failed — retrying in 5s..."; sleep 5; }
