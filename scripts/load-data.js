@@ -84,6 +84,9 @@ function makeMessage(topic, idx, sessionCtx) {
         base.watched_per = randInt(0, 100);
         base.autoplay    = Math.random() > 0.5;
     }
+    if (topic === 'post_impression') {
+        base.content_type = rand(['video', 'image']);
+    }
     if (topic === 'post_likes') {
         base.content_type = rand(['video', 'image', 'reel']);
         base.action       = 'like';
@@ -245,7 +248,13 @@ async function produceEvents() {
             const messages = [];
             for (let i = 0; i < take; i++) {
                 const msg = makeMessage(topic, c.sent + i, sessionCtx);
-                messages.push({ value: JSON.stringify(msg) });
+                let key;
+                if (topic === 'video_view') {
+                    key = `${msg.viewer_id}:${msg.content_id}`;
+                } else if (topic === 'post_impression') {
+                    key = `${msg.viewer_id}:${msg.content_type}:${msg.content_id}`;
+                }
+                messages.push({ key, value: JSON.stringify(msg) });
             }
             topicMessages.push({ topic, messages });
             c.sent += take;
