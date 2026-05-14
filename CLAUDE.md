@@ -43,6 +43,17 @@ Override consumer group for lag reporting:
 KAFKA_GROUP_ID=my-group npm run check-data
 ```
 
+After a broker redeployment, push the new `brokers.json` to all running app instances:
+```bash
+# swipenest-core (producers)
+cp brokers.json ../swipenest-core/brokers.json
+cd ../swipenest-core && ./scripts/refresh-brokers.sh
+
+# swipenest-kafka-consumer (analytics consumer)
+cp brokers.json ../swipenest-kafka-consumer/brokers.json
+cd ../swipenest-kafka-consumer && ./scripts/refresh-brokers.sh
+```
+
 ## Architecture
 
 ### Kafka port layout
@@ -61,8 +72,10 @@ KAFKA_GROUP_ID=my-group npm run check-data
 
 Read by:
 - `check-data.sh` — Section 1 broker info table
-- `swipenest-core` — reads automatically at startup (no copy needed)
-- `swipenest-consumer` — **must be manually copied** after each deployment: `cp brokers.json ../swipenest-kafka-consumer/brokers.json`
+- `swipenest-core` — copy to repo root then run `./scripts/refresh-brokers.sh`
+- `swipenest-kafka-consumer` — copy to repo root then run `./scripts/refresh-brokers.sh`
+
+Both `refresh-brokers.sh` scripts discover running instances via AWS tags, overwrite `brokers.json` on each instance, and restart PM2 only when the broker private IPs actually changed.
 
 Format:
 ```json
