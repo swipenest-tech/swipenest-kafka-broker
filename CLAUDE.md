@@ -30,6 +30,11 @@ TOTAL_RECORDS=5000 npm run load-data     # non-interactive override
 # Inspection
 npm run check-data       # broker info table + partition report + consumer lag (bash + JS)
 npm run check-data:js    # JS-only report (SSH tunnels + KafkaJS Admin API)
+
+# Topic verification — checks all required topics exist with correct retention + cleanup policy
+# Partition count is informational only (chosen interactively at deploy time, not validated)
+./scripts/verify-topics.sh
+SKIP_SSH=1 ./scripts/verify-topics.sh   # run directly on a broker instance
 ```
 
 Dry-run the deploy without touching AWS:
@@ -96,7 +101,9 @@ Five topics created during deployment (configured interactively per-topic partit
 | `video_watch_progress` | Watch progress milestone |
 | `post_comments` | A comment was posted |
 
-Topics are created with `retention.ms=604800000` (7 days) and `cleanup.policy=delete`.
+Topics are created with `retention.ms=604800000` (7 days) and `cleanup.policy=delete`. Partition count is chosen interactively per topic at deploy time — it is never hardcoded.
+
+Run `./scripts/verify-topics.sh` after any broker deployment to confirm all topics exist and are correctly configured. The script hard-fails if a topic is missing; partition count is reported as informational only.
 
 ### Partition key format
 
