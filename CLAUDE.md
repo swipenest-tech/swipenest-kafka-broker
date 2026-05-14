@@ -195,9 +195,7 @@ npm run clear                    # interactive
 |---|---|---|
 | `AWS_REGION` | `ap-south-1` | AWS region for EC2 and CLI commands |
 | `KAFKA_PORT` | `19092` | INTERNAL listener port (used by VPC consumers) |
-| `KAFKA_GROUP_ID` | `swipenest-consumer-group` | Consumer group ID for lag reporting in `check-data.js` |
-
-The consumer project uses group ID `swipenest-analytics-consumer` (set in `swipenest-consumer/src/config.js`). Set `KAFKA_GROUP_ID=swipenest-analytics-consumer` in `.env.local` here to see accurate lag for the production consumer.
+| `KAFKA_GROUP_ID` | `swipenest-analytics-consumer` | Consumer group ID for lag reporting in `check-data.js` |
 
 ## AWS infrastructure defaults (ap-south-1)
 
