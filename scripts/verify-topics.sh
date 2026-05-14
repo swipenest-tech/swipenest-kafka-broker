@@ -2,12 +2,12 @@
 ###############################################################################
 # verify-topics.sh
 #
-# Verifies that the post_likes topic (and all other expected topics) exist on
-# the Kafka cluster and are configured correctly.
+# Verifies that all expected Kafka topics exist and are correctly configured.
 #
 # Checks per topic:
-#   - Exists
-#   - Partition count matches expected value
+#   - Exists (hard fail if missing)
+#   - Partition count reported (informational only — count is chosen interactively
+#     at deploy time and is not re-validated here)
 #   - retention.ms = 604800000 (7 days)
 #   - cleanup.policy = delete
 #
@@ -31,20 +31,9 @@ PEM_KEY="${HOME}/.ssh/ec2-key-pair.pem"
 KAFKA_HOME="/opt/kafka"
 INTERNAL_PORT=19092
 
-# Expected topic configs: topic_name:expected_partitions
-declare -A EXPECTED_PARTITIONS=(
-    [video_view]=2
-    [post_impression]=2
-    [post_likes]=12
-    [post_likes_dead_letter]=1
-    [video_watch_progress]=2
-    [post_comments]=2
-    [post_likes_retry]=2
-)
-
-# Only post_likes has a hard partition requirement — all others are advisory
-REQUIRED_TOPICS=("post_likes")
-ADVISORY_TOPICS=("video_view" "post_impression" "video_watch_progress" "post_comments")
+# All topics that must exist — partition count is user-decided at deploy time
+# and is intentionally not validated here.
+REQUIRED_TOPICS=("post_likes" "video_view" "post_impression" "video_watch_progress" "post_comments")
 
 EXPECTED_RETENTION_MS=604800000
 EXPECTED_CLEANUP_POLICY=delete
@@ -86,9 +75,7 @@ echo ""
 FAILURES=0
 
 # ─── Check each topic ─────────────────────────────────────────────────────────
-ALL_TOPICS=("${REQUIRED_TOPICS[@]}" "${ADVISORY_TOPICS[@]}")
-
-for topic in "${ALL_TOPICS[@]}"; do
+for topic in "${REQUIRED_TOPICS[@]}"; do
     echo "━━━ ${topic} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     DESCRIBE=$(_run_kafka \
@@ -96,28 +83,17 @@ for topic in "${ALL_TOPICS[@]}"; do
         --bootstrap-server "$BOOTSTRAP" \
         --describe --topic "$topic" 2>&1) || DESCRIBE=""
 
-    # Check existence
+    # Existence is the only hard requirement — missing topic is a failure
     if echo "$DESCRIBE" | grep -qE "does not exist|UnknownTopicOrPartition|Error"; then
         fail "  Topic '$topic' does not exist on the cluster"
-        echo "       Create: kt --create --topic $topic --partitions ${EXPECTED_PARTITIONS[$topic]:-2} --config retention.ms=${EXPECTED_RETENTION_MS} --config cleanup.policy=${EXPECTED_CLEANUP_POLICY}"
+        echo "       Create: kt --create --topic '$topic' --partitions <N> --config retention.ms=${EXPECTED_RETENTION_MS} --config cleanup.policy=${EXPECTED_CLEANUP_POLICY}"
         FAILURES=$((FAILURES + 1))
         continue
     fi
 
-    # Extract actual partition count
+    # Report partition count — informational only; count is chosen at deploy time
     ACTUAL_PARTS=$(echo "$DESCRIBE" | grep "^Topic:" | awk 'NR==1{for(i=1;i<=NF;i++) if($i=="PartitionCount:") print $(i+1)}' | tr -d '[:space:]')
-    EXPECTED_PARTS="${EXPECTED_PARTITIONS[$topic]:-2}"
-
-    if [[ "$ACTUAL_PARTS" == "$EXPECTED_PARTS" ]]; then
-        ok "  Partitions: ${ACTUAL_PARTS} ✓"
-    else
-        warn "  Partitions: ${ACTUAL_PARTS} (expected ${EXPECTED_PARTS})"
-        # Only fail for required topics
-        if [[ " ${REQUIRED_TOPICS[*]} " == *" ${topic} "* ]]; then
-            fail "  REQUIRED: partition count mismatch for '${topic}' — must be ${EXPECTED_PARTS}"
-            FAILURES=$((FAILURES + 1))
-        fi
-    fi
+    ok "  Partitions: ${ACTUAL_PARTS} (user-defined at deploy time)"
 
     # Check retention.ms via kafka-configs.sh
     CONFIG_OUT=$(_run_kafka \
