@@ -33,7 +33,7 @@
 #       — copy directly to swipenest-consumer/brokers.json after deployment
 #       — swipenest-core reads this file automatically for KAFKA_BROKER
 #
-# AMI: ami-081dfc9f291f572f7  (Ubuntu, Kafka preinstalled at /opt/kafka)
+# AMI: ami-0018b1f38bf74ad62  (Ubuntu base — broker app cloned from GitHub at deploy time)
 # Kafka port architecture:
 #   CLIENT     9092   — external client access (public IP, KafkaJS, load scripts)
 #   INTERNAL  19092   — inter-broker + in-VPC app servers (private IP, VPC only)
@@ -49,7 +49,8 @@ set -euo pipefail
 
 # ─── Defaults ─────────────────────────────────────────────────────────────────
 AWS_REGION="${AWS_REGION:-ap-south-1}"
-KAFKA_AMI="ami-081dfc9f291f572f7"
+KAFKA_AMI="ami-0018b1f38bf74ad62"
+GITHUB_REPO="https://github.com/swipenest-tech/swipenest-kafka-broker.git"
 DEFAULT_KEY_NAME="ec2-key-pair"
 DEFAULT_PEM_KEY="${HOME}/.ssh/ec2-key-pair.pem"
 DEFAULT_SUBNET_ID="subnet-0da50cf2f3ebd9280"
@@ -416,6 +417,49 @@ ssh_broker_retry() {
         [[ $attempt -lt $max_tries ]] && { warn "    SSH attempt ${attempt} failed — retrying in 8s..."; sleep 8; }
     done
     die "SSH to ${pub_ip} failed after ${max_tries} attempts"
+}
+
+# ─── Install broker application from GitHub ───────────────────────────────────
+install_broker() {
+    local pub_ip="$1" node_id="$2"
+    info "  Installing broker application on node.id=${node_id} (${pub_ip})..."
+
+    ssh_broker "$pub_ip" bash << REMOTE
+set -e
+
+echo "[node.id=${node_id}] Installing prerequisites..."
+sudo apt-get update -qq
+sudo apt-get install -y git 2>&1 | tail -3
+echo "[node.id=${node_id}] Prerequisites installed"
+
+echo "[node.id=${node_id}] Cloning broker application from GitHub..."
+sudo rm -rf /home/ubuntu/project/swipenest-kafka-broker
+sudo mkdir -p /home/ubuntu/project
+sudo chown ubuntu:ubuntu /home/ubuntu/project
+git clone "${GITHUB_REPO}" /home/ubuntu/project/swipenest-kafka-broker
+chown -R ubuntu:ubuntu /home/ubuntu/project/swipenest-kafka-broker
+echo "[node.id=${node_id}] Repository cloned"
+
+echo "[node.id=${node_id}] Installing npm dependencies..."
+cd /home/ubuntu/project/swipenest-kafka-broker
+npm install --production --no-audit --no-fund 2>&1 | tail -5
+echo "[node.id=${node_id}] npm install complete"
+REMOTE
+}
+
+banner "Installing Broker Application from GitHub"
+[[ "$DRY_RUN" == "true" ]] && { warn "[DRY-RUN] Skipping broker application installation."; } || {
+    for i in "${!INST_IDS[@]}"; do
+        node_id=$(( i + 1 ))
+        attempt=0
+        while [[ $attempt -lt 3 ]]; do
+            attempt=$(( attempt + 1 ))
+            if install_broker "${PUB_IPS[$i]}" "$node_id"; then break; fi
+            [[ $attempt -lt 3 ]] && { warn "  Attempt ${attempt} failed — retrying in 10s..."; sleep 10; }
+            [[ $attempt -eq 3 ]] && die "Failed to install broker application on ${PUB_IPS[$i]} after 3 attempts"
+        done
+        success "  Broker ${node_id} application installed (${PRIV_IPS[$i]})"
+    done
 }
 
 # ─── Generate cluster UUID ────────────────────────────────────────────────────
