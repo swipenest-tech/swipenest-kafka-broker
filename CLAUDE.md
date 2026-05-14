@@ -107,13 +107,14 @@ Run `./scripts/verify-topics.sh` after any broker deployment to confirm all topi
 
 ### Partition key format
 
-Set by `swipenest-core/src/services/analytics.service.js` and mirrored in `scripts/load-data.js`:
+Set by `swipenest-core/src/services/analytics.service.js` and `swipenest-core/src/services/profile.image.service.js` / `profile.video.service.js`:
 
-| Topic | Partition key |
-|---|---|
-| `video_view` | `{viewer_id}:{content_id}` |
-| `post_impression` | `{viewer_id}:{content_type}:{content_id}` |
-| `post_likes`, `video_watch_progress`, `post_comments` | `{event_id}` (no dedup routing needed) |
+| Topic | Partition key | Why |
+|---|---|---|
+| `video_view` | `{viewer_id}:{content_id}` | Dedup-aware routing — same user+post always same partition |
+| `post_impression` | `{viewer_id}:{content_type}:{content_id}` | Same as above |
+| `post_likes` | `{post_id}:{content_type}:{liked_by}` | All like/unlike events from the same user on the same post land on the same partition → strict sequential order prevents race conditions (like→unlike out of order corrupting count or status) |
+| `video_watch_progress`, `post_comments` | `{event_id}` | No ordering requirement |
 
 ## deploy-kafka-brokers.sh — three phases
 
