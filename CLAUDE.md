@@ -8,6 +8,8 @@ Ops tooling for deploying, configuring, and managing SwipeNest's Kafka cluster o
 
 The cluster runs **KRaft mode** (no ZooKeeper). Every broker acts as both broker and controller.
 
+> **Full cross-repo flow:** see `../SWIPENEST_KAFKA_PROJECT_FLOW.md` (repo-set root) for the end-to-end analytics pipeline across clients → core → broker → consumers → Redis/MongoDB.
+
 ## Prerequisites
 
 - `aws`, `ssh`, `jq`, `node`, `base64` in PATH
@@ -113,8 +115,9 @@ Set by `swipenest-core/src/services/analytics.service.js` and `swipenest-core/sr
 |---|---|---|
 | `video_view` | `{viewer_id}:{content_id}` | Dedup-aware routing — same user+post always same partition |
 | `post_impression` | `{viewer_id}:{content_type}:{content_id}` | Same as above |
+| `video_watch_progress` | `{viewer_id}:{content_id}` | Same viewer+video on one partition → high-water-mark updates stay ordered |
 | `post_likes` | `{post_id}:{content_type}:{liked_by}` | All like/unlike events from the same user on the same post land on the same partition → strict sequential order prevents race conditions (like→unlike out of order corrupting count or status) |
-| `video_watch_progress`, `post_comments` | `{event_id}` | No ordering requirement |
+| `post_comments` | `{post_id}:{content_type}` | All comments for a post processed in order on one partition |
 
 ## deploy-kafka-brokers.sh — three phases
 
